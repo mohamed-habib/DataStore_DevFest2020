@@ -1,31 +1,35 @@
 package com.example.datastore_devfest
 
-import androidx.lifecycle.Transformations
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.asLiveData
+import androidx.lifecycle.*
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.launch
 
 class MainViewModel(val preferencesRepository: PreferencesRepository) : ViewModel() {
 
+    val userNameLiveData = preferencesRepository.userNameFlow.asLiveData()
+    val userAgeLiveData = preferencesRepository.userAgeFlow.asLiveData()
 
-    fun getUserName():String{
-        return preferencesRepository.getUserName()
+    fun getUserName(): String {
+        return preferencesRepository.userNameFlow.asLiveData().value ?: ""
     }
 
-    fun getUserAge():Int{
-        return preferencesRepository.getUserAge()
+    fun getUserAge(): Int {
+        return preferencesRepository.userAgeFlow.asLiveData().value ?: 0
     }
 
     fun saveUserName(userName: String) {
-        preferencesRepository.saveUserName(userName)
+        viewModelScope.launch {
+            preferencesRepository.saveUserName(userName)
+        }
     }
 
     fun saveUserAge(userAge: Int) {
-        preferencesRepository.saveAge(userAge)
+        viewModelScope.launch {
+            preferencesRepository.saveAge(userAge)
+        }
     }
 }
-
 
 class ViewModelFactory(
     private val preferencesRepository: PreferencesRepository

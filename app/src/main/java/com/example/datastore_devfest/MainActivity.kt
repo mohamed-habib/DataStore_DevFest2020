@@ -22,25 +22,24 @@ class MainActivity : AppCompatActivity() {
             ViewModelFactory(PreferencesRepository(this))
         ).get(MainViewModel::class.java)
 
-        updateui()
+
+        viewModel.userNameLiveData.observe(this, Observer {
+            user_name_tv.text = it
+        })
+
+        viewModel.userAgeLiveData.observe(this, Observer {
+            user_age_tv.text = it.toString()
+        })
 
     }
 
     fun onSaveClicked(view: View) {
-
         val userName = user_name_et.text
         val age = age_et.text
 
         viewModel.saveUserName(userName.toString())
 
         viewModel.saveUserAge(age.toString().toInt())
-
-        updateui()
-
     }
 
-    private fun updateui() {
-        user_name_tv.text = viewModel.getUserName()
-        user_age_tv.text = viewModel.getUserAge().toString()
-    }
 }
