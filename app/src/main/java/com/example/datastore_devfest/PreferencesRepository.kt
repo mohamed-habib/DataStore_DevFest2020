@@ -2,9 +2,17 @@ package com.example.datastore_devfest
 
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
+import android.util.Log
 import androidx.core.content.edit
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import androidx.datastore.CorruptionException
+import androidx.datastore.Serializer
+import androidx.datastore.createDataStore
+import androidx.datastore.migrations.SharedPreferencesMigration
+import com.google.protobuf.InvalidProtocolBufferException
+import kotlinx.coroutines.flow.*
+import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
 
 const val PREFERENCE_FILE_NAME = "user_data"
 const val USER_NAME_KEY = "user_name_key"
@@ -12,45 +20,45 @@ const val USER_AGE_KEY = "user_age_key"
 
 class PreferencesRepository(context: Context) {
 
-    val sharedPreferences = context.getSharedPreferences(PREFERENCE_FILE_NAME, MODE_PRIVATE)
-//
-//    // Keep the user name as a stream of changes
-//    private val _userNameFlow = MutableStateFlow(userName)
-//    val userNameFlow: StateFlow<String> = _userNameFlow
-//
-//    private val userName: String
-//        get() {
-//            return sharedPreferences.getString(USER_NAME_KEY, "") ?: ""
-//        }
-//
-//    // Keep the user name as a stream of changes
-//    private val _userAgeFlow = MutableStateFlow(userAge)
-//    val userAgeFlow: StateFlow<Int> = _userAgeFlow
-//
-//    private val userAge: Int
-//        get() {
-//            return sharedPreferences.getInt(USER_AGE_KEY, 0)
-//        }
+    val dataStore =
+        context.createDataStore(
+            fileName = "user.pb", serializer = UserPreferencesSerializer,
+            migrations = listOf(
+                SharedPreferencesMigration(context, PREFERENCE_FILE_NAME)
+                { sharedPreferencesView, userPreferences ->
+                    userPreferences.toBuilder()
+                        .setUserName(sharedPreferencesView.getString(USER_NAME_KEY, defValue = ""))
+                        .setAge(sharedPreferencesView.getInt(USER_AGE_KEY, defValue = -1)).build()
+                })
+        )
 
-
-    fun getUserName(): String {
-        return sharedPreferences.getString(USER_NAME_KEY, "") ?: ""
-    }
-
-    public fun saveUserName(userName: String) {
-        sharedPreferences.edit {
-            putString(USER_NAME_KEY, userName)
+    val userFlow: Flow<UserPreferences> = dataStore.data.catch { exception ->
+        // dataStore.data throws an IOException when an error is encountered when reading data
+        if (exception is IOException) {
+            exception.printStackTrace()
+            emit(UserPreferences.getDefaultInstance())
+        } else {
+            throw exception
         }
     }
 
-    public fun saveAge(age: Int) {
-        sharedPreferences.edit {
-            putInt(USER_AGE_KEY, age)
+    suspend fun saveUser(userName: String, age: Int) {
+        dataStore.updateData { preferences ->
+            preferences.toBuilder().setUserName(userName).setAge(age).build()
+        }
+
+    }
+}
+
+
+object UserPreferencesSerializer : Serializer<UserPreferences> {
+    override fun readFrom(input: InputStream): UserPreferences {
+        try {
+            return UserPreferences.parseFrom(input)
+        } catch (exception: InvalidProtocolBufferException) {
+            throw CorruptionException("Cannot read user.", exception)
         }
     }
 
-    fun getUserAge(): Int {
-        return sharedPreferences.getInt(USER_AGE_KEY, 0)
-    }
-
+    override fun writeTo(t: UserPreferences, output: OutputStream) = t.writeTo(output)
 }
