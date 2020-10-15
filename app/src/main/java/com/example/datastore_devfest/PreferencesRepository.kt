@@ -14,13 +14,15 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 
-const val PREFERENCE_FILE_NAME = "user_data"
-const val USER_NAME_KEY = "user_name_key"
-const val USER_AGE_KEY = "user_age_key"
 
 class PreferencesRepository(context: Context) {
+    companion object {
+        val PREFERENCE_FILE_NAME = "user_data"
+        val USER_NAME_KEY = "user_name_key"
+        val USER_AGE_KEY = "user_age_key"
+    }
 
-    val dataStore =
+    private val dataStore =
         context.createDataStore(
             fileName = "user.pb", serializer = UserPreferencesSerializer,
             migrations = listOf(
@@ -31,7 +33,7 @@ class PreferencesRepository(context: Context) {
                         .setAge(sharedPreferencesView.getInt(USER_AGE_KEY, defValue = -1)).build()
                 })
         )
-
+/**/
     val userFlow: Flow<UserPreferences> = dataStore.data.catch { exception ->
         // dataStore.data throws an IOException when an error is encountered when reading data
         if (exception is IOException) {
@@ -46,7 +48,6 @@ class PreferencesRepository(context: Context) {
         dataStore.updateData { preferences ->
             preferences.toBuilder().setUserName(userName).setAge(age).build()
         }
-
     }
 }
 
