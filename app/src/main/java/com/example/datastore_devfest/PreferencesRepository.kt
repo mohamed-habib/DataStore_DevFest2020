@@ -1,15 +1,13 @@
 package com.example.datastore_devfest
 
 import android.content.Context
-import android.content.Context.MODE_PRIVATE
-import android.util.Log
-import androidx.core.content.edit
 import androidx.datastore.CorruptionException
 import androidx.datastore.Serializer
 import androidx.datastore.createDataStore
 import androidx.datastore.migrations.SharedPreferencesMigration
 import com.google.protobuf.InvalidProtocolBufferException
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
@@ -33,7 +31,7 @@ class PreferencesRepository(context: Context) {
                         .setAge(sharedPreferencesView.getInt(USER_AGE_KEY, defValue = -1)).build()
                 })
         )
-/**/
+
     val userFlow: Flow<UserPreferences> = dataStore.data.catch { exception ->
         // dataStore.data throws an IOException when an error is encountered when reading data
         if (exception is IOException) {
