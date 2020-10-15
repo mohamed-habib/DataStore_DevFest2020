@@ -3,11 +3,8 @@ package com.example.datastore_devfest
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.asLiveData
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.coroutines.flow.collect
 
 class MainActivity : AppCompatActivity() {
 
@@ -22,7 +19,7 @@ class MainActivity : AppCompatActivity() {
             ViewModelFactory(PreferencesRepository(this))
         ).get(MainViewModel::class.java)
 
-        updateui()
+        updateUI()
 
     }
 
@@ -33,14 +30,14 @@ class MainActivity : AppCompatActivity() {
 
         viewModel.saveUserName(userName.toString())
 
-        viewModel.saveUserAge(age.toString().toInt())
+        viewModel.saveUserAge(age.toString())
 
-        updateui()
+        updateUI()
 
     }
 
-    private fun updateui() {
+    private fun updateUI() {
         user_name_tv.text = viewModel.getUserName()
-        user_age_tv.text = viewModel.getUserAge().toString()
+        user_age_tv.text = viewModel.getUserAge()
     }
 }
